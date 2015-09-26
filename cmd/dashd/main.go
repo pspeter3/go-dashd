@@ -2,9 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
+	"github.com/pspeter3/dashd"
 	"log"
 )
 
@@ -29,22 +28,9 @@ func parse() flags {
 	return args
 }
 
-func packetSource(args flags) (chan gopacket.Packet, error) {
-	handle, err := pcap.OpenLive(args.device, int32(args.snaplen), args.promisc, pcap.BlockForever)
-	if err != nil {
-		return nil, err
-	}
-	err = handle.SetBPFFilter(args.filter)
-	if err != nil {
-		return nil, err
-	}
-	source := gopacket.NewPacketSource(handle, handle.LinkType())
-	return source.Packets(), nil
-}
-
 func main() {
 	args := parse()
-	packets, err := packetSource(args)
+	packets, err := dashd.Sniff(args.device, int32(args.snaplen), args.promisc, args.filter)
 	if err != nil {
 		log.Fatal(err)
 	}
