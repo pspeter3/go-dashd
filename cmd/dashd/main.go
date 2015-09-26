@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/google/gopacket/layers"
 	"github.com/pspeter3/dashd"
 	"log"
 )
@@ -13,6 +12,8 @@ type flags struct {
 	snaplen int
 	promisc bool
 	filter  string
+	size    int
+	debouce float64
 	verbose bool
 }
 
@@ -23,7 +24,8 @@ func parse() flags {
 	flag.IntVar(&args.snaplen, "snaplen", 1600, "Snaplen for pcap")
 	flag.BoolVar(&args.promisc, "promisc", true, "Use promiscuous mode")
 	flag.StringVar(&args.filter, "filter", "arp", "Pcap filter")
-	flag.BoolVar(&args.verbose, "verbose", false, "Verbose output")
+	flag.IntVar(&args.size, "size", 50, "LRU cache size")
+	flag.Float64Var(&args.debouce, "debounce", 30, "Seconds to debounce packets")
 	flag.Parse()
 	return args
 }
@@ -34,10 +36,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for packet := range packets {
-		ethernet, ok := packet.LinkLayer().(*layers.Ethernet)
-		if ok {
-			log.Println(ethernet.SrcMAC)
-		}
+	gate, err := dashd.NewGate(args.size, args.debouce)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for addr := range gate.Serve(packets) {
+		log.Println(addr)
 	}
 }
