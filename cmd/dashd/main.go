@@ -40,7 +40,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for addr := range gate.Serve(packets) {
-		log.Println(addr)
+	maker := dashd.NewMaker(args.key)
+	sources := gate.Serve(packets)
+	errors := maker.Serve(sources)
+	for err := range errors {
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
